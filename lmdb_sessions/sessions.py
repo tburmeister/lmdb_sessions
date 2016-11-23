@@ -1,6 +1,8 @@
+import cherrypy
 import lmdb
 import os
 import pickle
+import struct
 
 from cherrypy.lib.sessions import Session
 
@@ -17,9 +19,7 @@ class LmdbSession(Session):
 
     def __init__(self, id=None, **kwargs):
         kwargs['storage_path'] = os.path.abspath(kwargs['storage_path'])
-
-        self.env = lmdb.open(kwargs['storage_path'], max_dbs=2)
-        self.exp_db = self.env.open_db('expiration'.encode(), dupsort=True)
+        self.env = lmdb.open(kwargs['storage_path'])
 
         Session.__init__(self, id=id, **kwargs)
 
@@ -42,23 +42,15 @@ class LmdbSession(Session):
             data = txn.get(self.id.encode())
 
         if data is not None:
-            return pickle.loads(data)
+            return pickle.loads(data[4:])
 
     def _save(self, expiration_time):
-        encoded_id = self.id.encode()
+        encoded_exp = struct.pack('I', int(expiration_time.timestamp()))
+        data = pickle.dumps((self._data, expiration_time),
+                            protocol=self.pickle_protocol)
 
         with self.env.begin(write=True) as txn:
-            data = pickle.dumps((self._data, expiration_time),
-                                protocol=self.pickle_protocol)
-
-            if txn.put(encoded_id, data, overwrite=False):
-                # new entry; add to expiration database
-                exp = expiration_time.timestamp()
-                bucket = exp - (exp % 60)
-                txn.put(str(bucket).encode(), encoded_id, db=self.exp_db)
-            else:
-                # existing entry; overwrite without adding to expiration db
-                txn.put(encoded_id, data, overwrite=True)
+            txn.put(self.id.encode(), encoded_exp + data)
 
     def _delete(self):
         with self.env.begin(write=True) as txn:
@@ -74,23 +66,20 @@ class LmdbSession(Session):
         """
         Clean up expired sessions.
 
-        On creation, we store each session id in an LMDB entry keyed on the 60
-        minute bucket of the expiration time. On clean-up, we retrieve these
-        entries and iterate over the stored session ids.
+        We prefix the stored LMDB data with 4 bytes denoting the expiration
+        time; on clean-up we iterate over all entries and use the prefix to
+        delete expired ones.
         """
-        now = self.now().timestamp()
-        bucket = now - (now % 60)
-        key = str(bucket).encode()
+        now = struct.pack('I', int(self.now().timestamp()))
 
         with self.env.begin(write=True) as txn:
-            cursor = txn.cursor(self.exp_db)
-            data = cursor.get(key)
-
-            if data is None:
-                return
+            cursor = txn.cursor()
 
             for key, value in cursor:
-                txn.delete(value)
+                if value[:4] <= now:
+                    if self.debug:
+                        cherrypy.log("Deleting session {}".format(key.decode()))
+                    txn.delete(key)
 
     def __len__(self):
         """
