@@ -1,4 +1,7 @@
 .idea
 *.pyc
-/sessions
+/*.egg-info
+/build
+/dist
 /examples/sessions
+/sessions

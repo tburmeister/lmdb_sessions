@@ -4,13 +4,11 @@ from cherrypy.lib.sessions import FileSession
 from lmdb_sessions.sessions import LmdbSession
 
 if __name__ == '__main__':
-    FileSession.setup(storage_path='examples/sessions/file')
-    fileSession = FileSession(id='4643e239855d3fc779d2b936fe866ce5dca6a257',
-                              storage_path='examples/sessions/file')
+    FileSession.setup(storage_path='examples/sessions/file', clean_freq=0)
+    fileSession = FileSession(storage_path='examples/sessions/file')
 
-    LmdbSession.setup(storage_path='examples/sessions/lmdb')
-    lmdbSession = LmdbSession(id='4643e239855d3fc779d2b936fe866ce5dca6a257',
-                              storage_path='examples/sessions/lmdb')
+    LmdbSession.setup(storage_path='examples/sessions/lmdb', clean_freq=0)
+    lmdbSession = LmdbSession(storage_path='examples/sessions/lmdb')
 
     fileSession.acquire_lock()
     start = time.time()
