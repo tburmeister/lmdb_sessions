@@ -1,0 +1,4 @@
+include LICENSE
+include README.md
+include lmdb_sessions/__init__.py
+include lmdb_sessions/sessions.py
