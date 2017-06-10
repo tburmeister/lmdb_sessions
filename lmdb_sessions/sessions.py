@@ -17,18 +17,10 @@ class LmdbSession(Session):
 
     pickle_protocol = pickle.HIGHEST_PROTOCOL
 
-    def __init__(self, id=None, **kwargs):
-        kwargs['storage_path'] = os.path.abspath(kwargs['storage_path'])
-        self.env = lmdb.open(kwargs['storage_path'])
-
-        Session.__init__(self, id=id, **kwargs)
-
-    def __del__(self):
-        self.env.close()
-
     @classmethod
     def setup(cls, **kwargs):
         kwargs['storage_path'] = os.path.abspath(kwargs['storage_path'])
+        cls.env = lmdb.open(kwargs['storage_path'])
 
         for k, v in kwargs.items():
             setattr(cls, k, v)
