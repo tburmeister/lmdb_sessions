@@ -62,13 +62,14 @@ class LmdbSession(Session):
         time; on clean-up we iterate over all entries and use the prefix to
         delete expired ones.
         """
-        now = struct.pack('I', int(self.now().timestamp()))
+        now = int(self.now().timestamp())
 
         with self.env.begin(write=True) as txn:
             cursor = txn.cursor()
 
             for key, value in cursor:
-                if value[:4] <= now:
+                expiration_time, = struct.unpack('I', value[:4])
+                if expiration_time <= now:
                     if self.debug:
                         cherrypy.log("Deleting session {}".format(key.decode()))
                     txn.delete(key)
