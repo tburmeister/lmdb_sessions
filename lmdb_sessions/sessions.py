@@ -20,7 +20,8 @@ class LmdbSession(Session):
     @classmethod
     def setup(cls, **kwargs):
         kwargs['storage_path'] = os.path.abspath(kwargs['storage_path'])
-        cls.env = lmdb.open(kwargs['storage_path'])
+        map_size = kwargs.get('map_size', 10485760)
+        cls.env = lmdb.open(kwargs['storage_path'], map_size=map_size)
 
         for k, v in kwargs.items():
             setattr(cls, k, v)

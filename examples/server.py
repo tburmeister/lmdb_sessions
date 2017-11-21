@@ -3,8 +3,6 @@ import os
 
 from lmdb_sessions.sessions import LmdbSession
 
-cherrypy.lib.sessions.LmdbSession = LmdbSession
-
 
 class Server(object):
 
@@ -14,6 +12,7 @@ class Server(object):
         cherrypy.session['count'] = count
         return "You have visited {} times".format(count)
 
+
 if __name__ == '__main__':
     path = os.path.abspath(os.path.dirname(__file__))
 
@@ -21,7 +20,7 @@ if __name__ == '__main__':
         'server.socket_host': '0.0.0.0',
         'server.socket_port': 8081,
         'tools.sessions.on': True,
-        'tools.sessions.storage_type': 'lmdb',
+        'tools.sessions.storage_class': LmdbSession,
         'tools.sessions.storage_path': os.path.join(path, '..', 'sessions')
     })
 

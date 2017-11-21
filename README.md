@@ -24,13 +24,10 @@ The script `server.py` in the `examples` directory demonstrates how to setup
 LmdbSessions on a CherryPy server and use it to show a user how many times
 they have visited the site.
 
-In general, you first need to import the `LmdbSession` class and attach it to
-the CherryPy sessions library:
+To use, you first need to import the `LmdbSession` class:
 
 ```
 from lmdb_sessions.sessions import LmdbSession
-
-cherrypy.lib.sessions.LmdbSession = LmdbSession
 ```
 
 Then you have to configure your server to use `LmdbSession` based sessions:
@@ -38,7 +35,7 @@ Then you have to configure your server to use `LmdbSession` based sessions:
 ```
 cherrypy.config.update({
 	'tools.sessions.on': True,
-	'tools.sessions.storage_type': 'lmdb',
+	'tools.sessions.storage_class': LmdbSession,
 	'tools.sessions.storage_path': '/path/to/sessions/directory')
 })
 ```
@@ -52,3 +49,16 @@ You can compare the performance of LmdbSessions vs. CherryPy's built-in file
 based sessions yourself by running `examples/perf.py`. On my MacBook Pro,
 LmdbSessions performs reads roughly 6x faster and writes roughly 3x faster.
 
+## Backend Size
+
+By Default, the LMDB session backend has a maximum size of 10MB; if you
+exceed this limit, new sessions will raise exceptions. You can increase
+the size limit of the backing store by adding the following config option:
+
+```
+cherrypy.config.update({
+    'tools.sessions.map_size': map_size
+})
+```
+
+Where `map_size` is the maximum size in bytes.

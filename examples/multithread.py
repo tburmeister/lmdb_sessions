@@ -16,6 +16,7 @@ def worker(num):
 
     print('Worker {} done'.format(num))
 
+
 if __name__ == '__main__':
     path = os.path.abspath(os.path.dirname(__file__))
     path = os.path.join(path, '..', 'sessions')
